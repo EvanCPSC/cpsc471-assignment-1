@@ -1,2 +1,4 @@
-# cpsc471-assignment-1
-programming assignment 1
+# CPSC 471 Assignment 1
+Evan Jimenez evanmji1123@gmail.com
+Yves Velasquez Vega vyves@gmail.com
+Siddharth Vasu siddharth.vasu.ca@gmail.com
