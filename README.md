@@ -1,5 +1,7 @@
 # CPSC 471 Assignment 1
 
+Programming Language: Python
+
 ### Group Members
 Evan Jimenez evanmji1123@gmail.com
 
