@@ -24,10 +24,39 @@ while True:
     #Check if the user wants to quit
     if client_line == "quit":
         print("Exiting the client.")
+        clientSocket.send("quit".encode())
         break
     elif client_line == "ls":
-        print("Listing files on the server...")
-        # This should be the logic to send a request to the server to list files and receive the response   
+            print("Listing files on the server...")
+            
+            dataSocket = socket(AF_INET, SOCK_STREAM)
+            dataSocket.bind(('', 0)) 
+            dataSocket.listen(1)
+            ephemeral_port = dataSocket.getsockname()[1]
+            
+            command_msg = f"ls {ephemeral_port}"
+            clientSocket.send(command_msg.encode())
+            
+            dataConn, server_addr = dataSocket.accept()
+            
+            ls_data = ""
+            while True:
+                chunk = dataConn.recv(1024).decode()
+                if not chunk:
+                    break
+                ls_data += chunk
+                
+            print("\n--- Server Directory Listing ---")
+            print(ls_data)
+            
+            bytes_transferred = len(ls_data.encode())
+            print(f"\n[Directory listing - {bytes_transferred} bytes transferred]")
+            
+            dataConn.close()
+            dataSocket.close()
+
+            status = clientSocket.recv(1024).decode()
+            print(f"Server status: {status}")
     elif client_line == "get":
         print("Getting file from the server...")
         # This should be the logic to send a request to the server to get a file and receive the response   

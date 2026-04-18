@@ -1,6 +1,7 @@
 #Server code
 from socket import * 
 import sys
+import subprocess
 
 #Check if the correct number of command-line arguments is provided
 if(len(sys.argv) != 2):
@@ -27,14 +28,34 @@ while True:
     connectionSocket, addr = serverSocket.accept()
     print("Received connection from: ", addr)
 
-    #Receive the data from the client
-    data = connectionSocket.recv(1024).decode()
-    print("Received data: ", data)
+    # Inner loop to keep the control channel open 
+    while True:
+        #Receive the data from the client
+        data = connectionSocket.recv(1024).decode()
+        if not data:
+            break
 
-    #Send the same data back to the client (echo)
-    connectionSocket.send(data.encode())
-    print("Sent data back to client")
+        print("Received data: ", data)
+        parts = data.split()
+        command = parts[0]
 
-    #Close the connection socket
+        if command == "ls" and len(parts) > 1:
+            client_data_port = int(parts[1])
+            try:
+                ls_output = subprocess.getoutput("ls")
+                dataSocket = socket(AF_INET, SOCK_STREAM)
+                dataSocket.connect((addr[0], client_data_port))
+                
+                dataSocket.sendall(ls_output.encode())
+
+                dataSocket.close()
+                print("SUCCESS")
+                connectionSocket.send("SUCCESS".encode()) 
+            except Exception as e:
+                print(f"FAILURE: {e}")
+                connectionSocket.send(f"FAILURE: {e}".encode())
+        
+        elif command == "quit":
+                break
+
     connectionSocket.close()
-
