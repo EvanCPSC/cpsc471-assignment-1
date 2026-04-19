@@ -20,19 +20,26 @@ clientSocket.connect((serverName, serverPort))
 while True:
     #Get line from user input
     client_line = input("ftp> ")
+    cmd = client_line.split()
 
     #Check if the user wants to quit
-    if client_line == "quit":
+    if cmd[0] == "quit":
         print("Exiting the client.")
         break
-    elif client_line == "ls":
+    elif cmd[0] == "ls":
         print("Listing files on the server...")
         # This should be the logic to send a request to the server to list files and receive the response   
-    elif client_line == "get":
-        print("Getting file from the server...")
+    elif cmd[0] == "get":
+        if len(cmd) == 1:
+            print("Please provide a file name...")
+        else:
+            print("Getting file from the server...")
         # This should be the logic to send a request to the server to get a file and receive the response   
-    elif client_line == "put":
-        print("Putting file on the server...")
+    elif cmd[0] == "put":
+        if len(cmd) == 1:
+            print("Please provide a file name...")
+        else:
+            print("Putting file from the server...")
         # This should be the logic to send a request to the server to put a file and receive the response
     else:
         print("Invalid command. Please enter 'ls', 'get', 'put', or 'quit'.")
