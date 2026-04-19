@@ -44,7 +44,11 @@ while True:
             if not validFile(cmd[1]):
                 print("Please provide a valid file...")
             else:
-                print("Getting file from the server...")
+                ls = os.listdir(os.getcwd())
+                if cmd[1] not in ls:
+                    print("File not found in the server...")
+                else:
+                    print("Getting file from the server...")
         # This should be the logic to send a request to the server to get a file and receive the response   
     elif cmd[0] == "put":
         if len(cmd) == 1:
@@ -53,7 +57,11 @@ while True:
             if not validFile(cmd[1]):
                 print("Please provide a valid file...")
             else:
-                print("Putting file from the server...")
+                ls = os.listdir(os.getcwd())
+                if cmd[1] in ls:
+                    print("File already in the server...")
+                else:
+                    print("Putting file in the server...")
         # This should be the logic to send a request to the server to put a file and receive the response
     else:
         print("Invalid command. Please enter 'ls', 'get', 'put', or 'quit'.")
