@@ -1,6 +1,6 @@
 #Client code
 from socket import *
-import sys
+import sys, os
 
 #Check if the correct number of command-line arguments is provided
 if(len(sys.argv) != 2):
@@ -31,6 +31,11 @@ while True:
         break
     elif cmd[0] == "ls":
         print("Listing files on the server...")
+        ls = os.listdir(os.getcwd())
+        res = ""
+        for i in ls:
+            res += i + "  "
+        print(res)
         # This should be the logic to send a request to the server to list files and receive the response   
     elif cmd[0] == "get":
         if len(cmd) == 1:
