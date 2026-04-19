@@ -17,6 +17,9 @@ clientSocket = socket(AF_INET,SOCK_STREAM)
 #Connect to the server
 clientSocket.connect((serverName, serverPort))
 
+def validFile(input):
+    return len(input.split(".")) == 2
+
 while True:
     #Get line from user input
     client_line = input("ftp> ")
@@ -33,15 +36,20 @@ while True:
         if len(cmd) == 1:
             print("Please provide a file name...")
         else:
-            print("Getting file from the server...")
+            if not validFile(cmd[1]):
+                print("Please provide a valid file...")
+            else:
+                print("Getting file from the server...")
         # This should be the logic to send a request to the server to get a file and receive the response   
     elif cmd[0] == "put":
         if len(cmd) == 1:
             print("Please provide a file name...")
         else:
-            print("Putting file from the server...")
+            if not validFile(cmd[1]):
+                print("Please provide a valid file...")
+            else:
+                print("Putting file from the server...")
         # This should be the logic to send a request to the server to put a file and receive the response
     else:
         print("Invalid command. Please enter 'ls', 'get', 'put', or 'quit'.")
-
 
