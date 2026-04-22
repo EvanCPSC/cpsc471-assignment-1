@@ -3,12 +3,12 @@ from socket import *
 import sys, os
 
 #Check if the correct number of command-line arguments is provided
-if(len(sys.argv) != 2):
-    print("Usage: python cli.py <port>")
+if(len(sys.argv) != 3):
+    print("Usage: python cli.py <<port>")
     sys.exit(1)
 
 #Name and port of the server to connect to
-serverName = int(sys.argv[1])
+serverName = str(sys.argv[1])
 serverPort = int(sys.argv[2]) #Port number should be passed as a command-line argument (int is used for typecasting)
 
 #Create a TCP client socket
