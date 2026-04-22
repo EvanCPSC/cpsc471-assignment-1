@@ -8,8 +8,8 @@ if(len(sys.argv) != 2):
     sys.exit(1)
 
 #Name and port of the server to connect to
-serverName = 'localhost'
-serverPort = int(sys.argv[1]) #Port number should be passed as a command-line argument (int is used for typecasting)
+serverName = int(sys.argv[1])
+serverPort = int(sys.argv[2]) #Port number should be passed as a command-line argument (int is used for typecasting)
 
 #Create a TCP client socket
 clientSocket = socket(AF_INET,SOCK_STREAM)
@@ -19,6 +19,31 @@ clientSocket.connect((serverName, serverPort))
 
 def validFile(input):
     return len(input.split(".")) == 2
+
+def put(fileName):
+    # Reads file
+    fileObj = open(fileName, "r")
+    fileData = fileObj.read(65536)
+
+    # Executes until all data from file has been sent
+    while fileData:
+        dataSizeStr = str(len(fileData))
+
+        # Prepends data with length of data
+        while len(dataSizeStr) < 10:
+            dataSizeStr = "0" + dataSizeStr
+        
+        fileData = dataSizeStr + fileData
+
+        numSent = 0
+
+        while len(fileData) > numSent:
+            numSent += clientSocket.send(fileData[numSent:])
+
+        fileData = fileObj.read(65536)
+
+    print("Sent " + fileName)
+
 
 while True:
     #Get line from user input
@@ -49,6 +74,7 @@ while True:
                     print("File not found in the server...")
                 else:
                     print("Getting file from the server...")
+                    put(cmd[1])
         # This should be the logic to send a request to the server to get a file and receive the response   
     elif cmd[0] == "put":
         if len(cmd) == 1:

@@ -18,8 +18,21 @@ serverSocket.bind(('',serverPort))
 serverSocket.listen(1)
 print("The server is ready to receive")
 
-#Bugger to store the received data
-data = ""
+
+def recvAll(sock, numBytes):
+    data = ""
+    tmpBuff = ""
+
+    while len(data) < numBytes:
+        tmpBuff = sock.recv(numBytes)
+
+        if not tmpBuff:
+            break
+
+        data += tmpBuff
+
+    return data
+
 
 #Forever loop to accept and process incoming connections
 while True:
@@ -27,9 +40,23 @@ while True:
     connectionSocket, addr = serverSocket.accept()
     print("Received connection from: ", addr)
 
-    #Receive the data from the client
-    data = connectionSocket.recv(1024).decode()
-    print("Received data: ", data)
+    # Buffer to store the received data
+    data = ""
+
+    # Temporary buffer
+    recvBuff = ""
+
+    # Receive the first 10 bytes indicating the
+	# size of the file
+    fileSizeBuff = recvAll(clientSock, 10)
+		
+	# Get the file size
+    fileSize = int(fileSizeBuff)
+	
+    print("The file size is ", fileSize)
+	
+	# Get the file data
+    fileData = recvAll(clientSock, fileSize)
 
     #Send the same data back to the client (echo)
     connectionSocket.send(data.encode())
