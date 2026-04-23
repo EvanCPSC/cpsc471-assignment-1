@@ -9,7 +9,7 @@ if(len(sys.argv) != 2):
 
 #Name and port of the server to connect to
 serverName = 'localhost'
-serverPort = int(sys.argv[2]) #Port number should be passed as a command-line argument (int is used for typecasting)
+serverPort = int(sys.argv[1]) #Port number should be passed as a command-line argument (int is used for typecasting)
 
 #Create a TCP client socket
 clientSocket = socket(AF_INET,SOCK_STREAM)
