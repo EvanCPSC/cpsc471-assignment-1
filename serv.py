@@ -48,7 +48,7 @@ while True:
 
     # Receive the first 10 bytes indicating the
 	# size of the file
-    fileSizeBuff = recvAll(clientSock, 10)
+    fileSizeBuff = recvAll(connectionSocket, 10)
 		
 	# Get the file size
     fileSize = int(fileSizeBuff)
@@ -56,7 +56,7 @@ while True:
     print("The file size is ", fileSize)
 	
 	# Get the file data
-    fileData = recvAll(clientSock, fileSize)
+    fileData = recvAll(connectionSocket, fileSize)
 
     #Send the same data back to the client (echo)
     connectionSocket.send(data.encode())
