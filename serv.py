@@ -40,8 +40,15 @@ def recv_msg(sock):
         data += chunk
     return data
 
+def open_data_connection(client_ip, data_port):
+    """Connect to the client's ephemeral data port"""
+    dataSocket = socket(AF_INET, SOCK_STREAM)
+    dataSocket.connect((client_ip, data_port))
+    return dataSocket
+
 while True:
     connectionSocket, addr = serverSocket.accept()
+    client_ip = addr[0]
     print("Received connection from: ", addr)
 
     while True:
@@ -58,29 +65,36 @@ while True:
             break
             
         elif cmd[0] == "ls":
+            data_port = int(cmd[1])
             print("Executing 'ls' command...")
             ls = os.listdir(os.getcwd())
             res = "  ".join(ls)
-            send_msg(connectionSocket, res)
+            dataSocket = open_data_connection(client_ip, data_port)
+            send_msg(dataSocket, res)
+            dataSocket.close()
             send_msg(connectionSocket, "SUCCESS: ls complete.")
             
         elif cmd[0] == "get":
             filename = cmd[1]
+            data_port = int(cmd[2])
             print(f"Client requested to get: {filename}")
             if filename in os.listdir(os.getcwd()):
                 with open(filename, "rb") as f:
                     fileData = f.read()
-                send_msg(connectionSocket, fileData)
+                dataSocket = open_data_connection(client_ip, data_port)
+                send_msg(dataSocket, fileData)
+                dataSocket.close()
                 send_msg(connectionSocket, f"SUCCESS: {filename} {len(fileData)} bytes transferred.")
             else:
-                send_msg(connectionSocket, "ERROR")
                 send_msg(connectionSocket, f"FAILURE: File '{filename}' not found.")
                 
         elif cmd[0] == "put":
             filename = cmd[1]
+            data_port = int(cmd[2])
             print(f"Client putting file: {filename}")
-            send_msg(connectionSocket, "OK") 
-            fileData = recv_msg(connectionSocket)
+            dataSocket = open_data_connection(client_ip, data_port)
+            fileData = recv_msg(dataSocket)
+            dataSocket.close()
             with open(filename, "wb") as f:
                 f.write(fileData)
             print(f"Successfully received and saved {filename}")

@@ -37,6 +37,13 @@ def recv_msg(sock):
         data += chunk
     return data
 
+def open_data_listener():
+    """Create a temporary socket on an ephemeral port for the data channel"""
+    dataListenSock = socket(AF_INET, SOCK_STREAM)
+    dataListenSock.bind(('', 0))
+    ephemeral_port = dataListenSock.getsockname()[1]
+    dataListenSock.listen(1)
+    return dataListenSock, ephemeral_port
 
 while True:
     client_line = input("ftp> ")
@@ -52,8 +59,12 @@ while True:
         break
         
     elif cmd[0] == "ls":
-        send_msg(clientSocket, "ls")
-        res = recv_msg(clientSocket).decode()
+        dataListenSock, eport = open_data_listener()
+        send_msg(clientSocket, f"ls {eport}")
+        dataSocket, _ = dataListenSock.accept()
+        dataListenSock.close()
+        res = recv_msg(dataSocket).decode()
+        dataSocket.close()
         status = recv_msg(clientSocket).decode()
         print("Listing files on the server:")
         print(res)
@@ -63,14 +74,19 @@ while True:
         if len(cmd) == 1:
             print("Please provide a file name...")
         else:
-            send_msg(clientSocket, f"get {cmd[1]}")
-            response = recv_msg(clientSocket)
+            dataListenSock, eport = open_data_listener()
+            send_msg(clientSocket, f"get {cmd[1]} {eport}")
             status = recv_msg(clientSocket).decode()
             
-            if response == b"ERROR":
+            if status.startswith("FAILURE"):
+                dataListenSock.close()
                 print("File not found in the server...")
                 print(status)
             else:
+                dataSocket, _ = dataListenSock.accept()
+                dataListenSock.close()
+                response = recv_msg(dataSocket)
+                dataSocket.close()
                 print("Getting file from the server...")
                 with open(cmd[1], "wb") as f:
                     f.write(response)
@@ -85,15 +101,16 @@ while True:
                 print("File not found locally...")
             else:
                 print("Putting file in the server...")
-                send_msg(clientSocket, f"put {cmd[1]}")
-                
-                ack = recv_msg(clientSocket).decode()
-                if ack == "OK":
-                    with open(cmd[1], "rb") as f:
-                        fileData = f.read()
-                    send_msg(clientSocket, fileData)
-                    status = recv_msg(clientSocket).decode()
-                    print(f"Sent '{cmd[1]}' — {len(fileData)} bytes transferred.")
-                    print(status)
+                dataListenSock, eport = open_data_listener()
+                send_msg(clientSocket, f"put {cmd[1]} {eport}")
+                dataSocket, _ = dataListenSock.accept()
+                dataListenSock.close()
+                with open(cmd[1], "rb") as f:
+                    fileData = f.read()
+                send_msg(dataSocket, fileData)
+                dataSocket.close()
+                status = recv_msg(clientSocket).decode()
+                print(f"Sent '{cmd[1]}' — {len(fileData)} bytes transferred.")
+                print(status)
     else:
         print("Invalid command. Please enter 'ls', 'get', 'put', or 'quit'.")
