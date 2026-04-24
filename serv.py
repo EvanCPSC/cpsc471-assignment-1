@@ -24,10 +24,13 @@ def send_msg(sock, msg):
 
 def recv_msg(sock):
     """Helper to receive a message based on the 10-byte size header"""
-    size_buff = sock.recv(10)
-    if not size_buff:
-        return None
-    
+    size_buff = b""
+    while len(size_buff) < 10:
+        chunk = sock.recv(10 - len(size_buff))
+        if not chunk:
+            return None
+        size_buff += chunk
+
     size = int(size_buff.decode())
     data = b""
     while len(data) < size:
