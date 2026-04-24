@@ -1,61 +1,82 @@
 #Server code
 from socket import * 
 import sys
-import subprocess
+import os
 
-#Check if the correct number of command-line arguments is provided
-if(len(sys.argv) != 2):
+if len(sys.argv) != 2:
     print("Usage: python serv.py <port>")
     sys.exit(1)
 
-#The port on which to listen - should be passed as a command-line argument (int is used for typecasting)
 serverPort = int(sys.argv[1])
 
-#Create a TCP server socket
-serverSocket = socket(AF_INET,SOCK_STREAM)
-serverSocket.bind(('',serverPort))
+serverSocket = socket(AF_INET, SOCK_STREAM)
+serverSocket.bind(('', serverPort))
 
-#Start listening for incoming connections
 serverSocket.listen(1)
 print("The server is ready to receive")
 
-#Bugger to store the received data
-data = ""
+def send_msg(sock, msg):
+    """Helper to send a message prefixed with a 10-byte size header"""
+    if isinstance(msg, str):
+        msg = msg.encode()
+    size_str = str(len(msg)).zfill(10).encode()
+    sock.sendall(size_str + msg)
 
-#Forever loop to accept and process incoming connections
+def recv_msg(sock):
+    """Helper to receive a message based on the 10-byte size header"""
+    size_buff = sock.recv(10)
+    if not size_buff:
+        return None
+    
+    size = int(size_buff.decode())
+    data = b""
+    while len(data) < size:
+        chunk = sock.recv(size - len(data))
+        if not chunk:
+            break
+        data += chunk
+    return data
+
 while True:
-    #Accept a connection from the client
     connectionSocket, addr = serverSocket.accept()
     print("Received connection from: ", addr)
 
-    # Inner loop to keep the control channel open 
     while True:
-        #Receive the data from the client
-        data = connectionSocket.recv(1024).decode()
-        if not data:
+        request = recv_msg(connectionSocket)
+        if not request:
+            print("Client disconnected.")
             break
-
-        print("Received data: ", data)
-        parts = data.split()
-        command = parts[0]
-
-        if command == "ls" and len(parts) > 1:
-            client_data_port = int(parts[1])
-            try:
-                ls_output = subprocess.getoutput("ls")
-                dataSocket = socket(AF_INET, SOCK_STREAM)
-                dataSocket.connect((addr[0], client_data_port))
-                
-                dataSocket.sendall(ls_output.encode())
-
-                dataSocket.close()
-                print("SUCCESS")
-                connectionSocket.send("SUCCESS".encode()) 
-            except Exception as e:
-                print(f"FAILURE: {e}")
-                connectionSocket.send(f"FAILURE: {e}".encode())
         
-        elif command == "quit":
-                break
+        req_str = request.decode()
+        cmd = req_str.split()
+
+        if cmd[0] == "quit":
+            print("Client requested to quit.")
+            break
+            
+        elif cmd[0] == "ls":
+            print("Executing 'ls' command...")
+            ls = os.listdir(os.getcwd())
+            res = "  ".join(ls)
+            send_msg(connectionSocket, res)
+            
+        elif cmd[0] == "get":
+            filename = cmd[1]
+            print(f"Client requested to get: {filename}")
+            if filename in os.listdir(os.getcwd()):
+                with open(filename, "rb") as f:
+                    fileData = f.read()
+                send_msg(connectionSocket, fileData)
+            else:
+                send_msg(connectionSocket, "ERROR")
+                
+        elif cmd[0] == "put":
+            filename = cmd[1]
+            print(f"Client putting file: {filename}")
+            send_msg(connectionSocket, "OK") 
+            fileData = recv_msg(connectionSocket)
+            with open(filename, "wb") as f:
+                f.write(fileData)
+            print(f"Successfully received and saved {filename}")
 
     connectionSocket.close()
