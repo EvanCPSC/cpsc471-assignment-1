@@ -1,94 +1,94 @@
-#Client code
 from socket import *
 import sys, os
 
-#Check if the correct number of command-line arguments is provided
-if(len(sys.argv) != 2):
+if len(sys.argv) != 2:
     print("Usage: python cli.py <port>")
     sys.exit(1)
 
-#Name and port of the server to connect to
 serverName = 'localhost'
-serverPort = int(sys.argv[1]) #Port number should be passed as a command-line argument (int is used for typecasting)
+serverPort = int(sys.argv[1]) 
 
-#Create a TCP client socket
-clientSocket = socket(AF_INET,SOCK_STREAM)
-
-#Connect to the server
+clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 
-def validFile(input):
-    return len(input.split(".")) == 2
+def send_msg(sock, msg):
+    """Helper to send a message prefixed with a 10-byte size header"""
+    if isinstance(msg, str):
+        msg = msg.encode()
+    size_str = str(len(msg)).zfill(10).encode()
+    sock.sendall(size_str + msg)
 
-def put(fileName):
-    # Reads file
-    fileObj = open(fileName, "r")
-    fileData = fileObj.read(65536)
+def recv_msg(sock):
+    """Helper to receive a message based on the 10-byte size header"""
+    size_buff = sock.recv(10)
+    if not size_buff:
+        return None
+    
+    size = int(size_buff.decode())
+    data = b""
+    while len(data) < size:
+        chunk = sock.recv(size - len(data))
+        if not chunk:
+            break
+        data += chunk
+    return data
 
-    # Executes until all data from file has been sent
-    while fileData:
-        dataSizeStr = str(len(fileData))
-
-        # Prepends data with length of data
-        while len(dataSizeStr) < 10:
-            dataSizeStr = "0" + dataSizeStr
-        
-        fileData = dataSizeStr + fileData
-
-        numSent = 0
-
-        while len(fileData) > numSent:
-            numSent += clientSocket.send(fileData[numSent:])
-
-        fileData = fileObj.read(65536)
-
-    print("Sent " + fileName)
-
+def validFile(input_str):
+    return len(input_str.split(".")) >= 2
 
 while True:
-    #Get line from user input
     client_line = input("ftp> ")
     cmd = client_line.split()
+    
+    if not cmd:
+        continue
 
-    #Check if the user wants to quit
     if cmd[0] == "quit":
+        send_msg(clientSocket, "quit")
         print("Exiting the client.")
+        clientSocket.close()
         break
+        
     elif cmd[0] == "ls":
-        print("Listing files on the server...")
-        ls = os.listdir(os.getcwd())
-        res = ""
-        for i in ls:
-            res += i + "  "
+        send_msg(clientSocket, "ls")
+        res = recv_msg(clientSocket).decode()
+        print("Listing files on the server:")
         print(res)
-        # This should be the logic to send a request to the server to list files and receive the response   
+        
     elif cmd[0] == "get":
         if len(cmd) == 1:
             print("Please provide a file name...")
+        elif not validFile(cmd[1]):
+            print("Please provide a valid file...")
         else:
-            if not validFile(cmd[1]):
-                print("Please provide a valid file...")
+            send_msg(clientSocket, f"get {cmd[1]}")
+            response = recv_msg(clientSocket)
+            
+            if response == b"ERROR":
+                print("File not found in the server...")
             else:
-                ls = os.listdir(os.getcwd())
-                if cmd[1] not in ls:
-                    print("File not found in the server...")
-                else:
-                    print("Getting file from the server...")
-        # This should be the logic to send a request to the server to get a file and receive the response   
+                print("Getting file from the server...")
+                with open(cmd[1], "wb") as f:
+                    f.write(response)
+                print(f"Downloaded {cmd[1]} successfully.")
+                
     elif cmd[0] == "put":
         if len(cmd) == 1:
             print("Please provide a file name...")
+        elif not validFile(cmd[1]):
+            print("Please provide a valid file...")
         else:
-            if not validFile(cmd[1]):
-                print("Please provide a valid file...")
+            if cmd[1] not in os.listdir(os.getcwd()):
+                print("File not found locally...")
             else:
-                ls = os.listdir(os.getcwd())
-                if cmd[1] in ls:
-                    print("File already in the server...")
-                else:
-                    print("Putting file in the server...")
-                    put(cmd[1])
-        # This should be the logic to send a request to the server to put a file and receive the response
+                print("Putting file in the server...")
+                send_msg(clientSocket, f"put {cmd[1]}")
+                
+                ack = recv_msg(clientSocket).decode()
+                if ack == "OK":
+                    with open(cmd[1], "rb") as f:
+                        fileData = f.read()
+                    send_msg(clientSocket, fileData)
+                    print("Sent " + cmd[1])
     else:
         print("Invalid command. Please enter 'ls', 'get', 'put', or 'quit'.")
-
