@@ -12,3 +12,5 @@ Siddharth Vasu <siddharth.vasu.ca@gmail.com>
 
 Gabrielius "Gabe" Gintalas gabrieliusgintalas\@gmail.com
 
+Emily Tsai <emilymaytsai@gmail.com>
+
