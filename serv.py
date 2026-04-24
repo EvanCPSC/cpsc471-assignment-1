@@ -62,6 +62,7 @@ while True:
             ls = os.listdir(os.getcwd())
             res = "  ".join(ls)
             send_msg(connectionSocket, res)
+            send_msg(connectionSocket, "SUCCESS: ls complete.")
             
         elif cmd[0] == "get":
             filename = cmd[1]
@@ -70,8 +71,10 @@ while True:
                 with open(filename, "rb") as f:
                     fileData = f.read()
                 send_msg(connectionSocket, fileData)
+                send_msg(connectionSocket, f"SUCCESS: {filename} {len(fileData)} bytes transferred.")
             else:
                 send_msg(connectionSocket, "ERROR")
+                send_msg(connectionSocket, f"FAILURE: File '{filename}' not found.")
                 
         elif cmd[0] == "put":
             filename = cmd[1]
@@ -81,5 +84,6 @@ while True:
             with open(filename, "wb") as f:
                 f.write(fileData)
             print(f"Successfully received and saved {filename}")
+            send_msg(connectionSocket, f"SUCCESS: {filename} {len(fileData)} bytes received.")
 
     connectionSocket.close()

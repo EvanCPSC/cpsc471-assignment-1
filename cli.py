@@ -54,8 +54,10 @@ while True:
     elif cmd[0] == "ls":
         send_msg(clientSocket, "ls")
         res = recv_msg(clientSocket).decode()
+        status = recv_msg(clientSocket).decode()
         print("Listing files on the server:")
         print(res)
+        print(status)
         
     elif cmd[0] == "get":
         if len(cmd) == 1:
@@ -63,14 +65,17 @@ while True:
         else:
             send_msg(clientSocket, f"get {cmd[1]}")
             response = recv_msg(clientSocket)
+            status = recv_msg(clientSocket).decode()
             
             if response == b"ERROR":
                 print("File not found in the server...")
+                print(status)
             else:
                 print("Getting file from the server...")
                 with open(cmd[1], "wb") as f:
                     f.write(response)
-                print(f"Downloaded '{cmd[1]}' successfully.")
+                print(f"Downloaded '{cmd[1]}' — {len(response)} bytes transferred.")
+                print(status)
                 
     elif cmd[0] == "put":
         if len(cmd) == 1:
@@ -87,6 +92,8 @@ while True:
                     with open(cmd[1], "rb") as f:
                         fileData = f.read()
                     send_msg(clientSocket, fileData)
-                    print(f"Sent '{cmd[1]}'.")
+                    status = recv_msg(clientSocket).decode()
+                    print(f"Sent '{cmd[1]}' — {len(fileData)} bytes transferred.")
+                    print(status)
     else:
         print("Invalid command. Please enter 'ls', 'get', 'put', or 'quit'.")
