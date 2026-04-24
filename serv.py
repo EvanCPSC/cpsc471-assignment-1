@@ -67,7 +67,7 @@ while True:
         elif cmd[0] == "ls":
             data_port = int(cmd[1])
             print("Executing 'ls' command...")
-            ls = os.listdir(os.getcwd())
+            ls = os.listdir(f"{os.getcwd()}/server")
             res = "  ".join(ls)
             dataSocket = open_data_connection(client_ip, data_port)
             send_msg(dataSocket, res)
@@ -76,10 +76,11 @@ while True:
             
         elif cmd[0] == "get":
             filename = cmd[1]
+            dir = f"{os.getcwd()}/server"
             data_port = int(cmd[2])
             print(f"Client requested to get: {filename}")
-            if filename in os.listdir(os.getcwd()):
-                with open(filename, "rb") as f:
+            if filename in os.listdir(dir):
+                with open(f"{dir}/{filename}", "rb") as f:
                     fileData = f.read()
                 dataSocket = open_data_connection(client_ip, data_port)
                 send_msg(dataSocket, fileData)
@@ -89,7 +90,7 @@ while True:
                 send_msg(connectionSocket, f"FAILURE: File '{filename}' not found.")
                 
         elif cmd[0] == "put":
-            filename = cmd[1]
+            filename = f"server/{cmd[1]}"
             data_port = int(cmd[2])
             print(f"Client putting file: {filename}")
             dataSocket = open_data_connection(client_ip, data_port)

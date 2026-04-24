@@ -83,21 +83,24 @@ while True:
                 print("File not found in the server...")
                 print(status)
             else:
+                filename = f"client/{cmd[1]}"
                 dataSocket, _ = dataListenSock.accept()
                 dataListenSock.close()
                 response = recv_msg(dataSocket)
                 dataSocket.close()
                 print("Getting file from the server...")
-                with open(cmd[1], "wb") as f:
+                with open(filename, "wb") as f:
                     f.write(response)
-                print(f"Downloaded '{cmd[1]}' — {len(response)} bytes transferred.")
+                print(f"Downloaded '{filename}' — {len(response)} bytes transferred.")
                 print(status)
                 
     elif cmd[0] == "put":
         if len(cmd) == 1:
             print("Please provide a file name...")
         else:
-            if not os.path.isfile(cmd[1]):
+            filename = cmd[1]
+            dir = f"{os.getcwd()}/client"
+            if not filename in os.listdir(dir):
                 print("File not found locally...")
             else:
                 print("Putting file in the server...")
@@ -105,7 +108,7 @@ while True:
                 send_msg(clientSocket, f"put {cmd[1]} {eport}")
                 dataSocket, _ = dataListenSock.accept()
                 dataListenSock.close()
-                with open(cmd[1], "rb") as f:
+                with open(f"{dir}/{filename}", "rb") as f:
                     fileData = f.read()
                 send_msg(dataSocket, fileData)
                 dataSocket.close()
